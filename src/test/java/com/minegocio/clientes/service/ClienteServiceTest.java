@@ -4,6 +4,7 @@ import com.minegocio.clientes.domain.Cliente;
 import com.minegocio.clientes.domain.Direccion;
 import com.minegocio.clientes.dto.ClienteDTO;
 import com.minegocio.clientes.exception.ClienteYaExisteException;
+import com.minegocio.clientes.exception.DireccionMatrizYaExisteException;
 import com.minegocio.clientes.repository.ClienteRepository;
 import com.minegocio.clientes.repository.DireccionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import com.minegocio.clientes.exception.DireccionMatrizYaExisteException;
  
 
 import java.util.Arrays;
@@ -19,7 +21,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+
 
 public class ClienteServiceTest {
 
@@ -142,4 +146,70 @@ public class ClienteServiceTest {
         assertEquals(1, direcciones.size());
         assertEquals("Av. 10 de Agosto", direcciones.get(0).getDireccion());
     }
+    @Test
+public void testAgregarDireccionMatrizYaExiste() {
+    // Cliente con una dirección matriz existente
+    Direccion direccionExistente = new Direccion();
+    direccionExistente.setEsMatriz(true);
+    direccionExistente.setCliente(cliente);
+
+    cliente.setDirecciones(Arrays.asList(direccionExistente)); // Simula que ya tiene una dirección matriz
+
+    // La nueva dirección también es matriz
+    Direccion nuevaDireccion = new Direccion();
+    nuevaDireccion.setEsMatriz(true);
+    nuevaDireccion.setCliente(cliente);
+
+    when(clienteRepo.findById(1L)).thenReturn(Optional.of(cliente));
+
+    DireccionMatrizYaExisteException ex = assertThrows(DireccionMatrizYaExisteException.class, () -> {
+        clienteService.agregarDireccion(1L, nuevaDireccion);
+    });
+
+    assertEquals("El cliente ya tiene una dirección matriz registrada", ex.getMessage());
+}
+
+@Test
+public void testEditarClienteNoEncontrado() {
+    when(clienteRepo.findById(1L)).thenReturn(Optional.empty());
+
+    RuntimeException ex = assertThrows(RuntimeException.class, () -> {
+        clienteService.editarCliente(1L, clienteDTO);
+    });
+
+    assertEquals("Cliente no encontrado", ex.getMessage());
+}
+@Test
+public void testAgregarDireccionClienteNoEncontrado() {
+    when(clienteRepo.findById(1L)).thenReturn(Optional.empty());
+
+    RuntimeException ex = assertThrows(RuntimeException.class, () -> {
+        clienteService.agregarDireccion(1L, direccion);
+    });
+
+    assertEquals("Cliente no encontrado", ex.getMessage());
+}
+
+@Test
+public void testAgregarDireccionNoMatrizCuandoYaHayMatriz() {
+    Direccion matrizExistente = new Direccion();
+    matrizExistente.setEsMatriz(true);
+    matrizExistente.setCliente(cliente);
+
+    cliente.setDirecciones(Arrays.asList(matrizExistente));
+
+    Direccion nuevaDireccion = new Direccion();
+    nuevaDireccion.setEsMatriz(false);
+    nuevaDireccion.setCliente(cliente);
+
+    when(clienteRepo.findById(1L)).thenReturn(Optional.of(cliente));
+    when(direccionRepo.save(any(Direccion.class))).thenReturn(nuevaDireccion);
+
+    Direccion result = clienteService.agregarDireccion(1L, nuevaDireccion);
+
+    assertNotNull(result);
+    assertFalse(result.isEsMatriz());
+}
+
+
 }

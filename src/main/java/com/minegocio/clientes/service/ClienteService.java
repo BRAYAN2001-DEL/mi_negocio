@@ -4,6 +4,7 @@ import com.minegocio.clientes.domain.Cliente;
 import com.minegocio.clientes.domain.Direccion;
 import com.minegocio.clientes.dto.ClienteDTO;
 import com.minegocio.clientes.exception.ClienteYaExisteException;
+import com.minegocio.clientes.exception.DireccionMatrizYaExisteException;
 import com.minegocio.clientes.repository.ClienteRepository;
 import com.minegocio.clientes.repository.DireccionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,11 +46,23 @@ public class ClienteService {
         clienteRepo.deleteById(id);
     }
 
-    public Direccion agregarDireccion(Long clienteId, Direccion direccion) {
-        Cliente cliente = obtenerClientePorId(clienteId);
-        direccion.setCliente(cliente);
-        return direccionRepo.save(direccion);
+     public Direccion agregarDireccion(Long clienteId, Direccion direccion) {
+    Cliente cliente = obtenerClientePorId(clienteId);
+
+    // Validar que no exista ya una dirección matriz
+    if (direccion.isEsMatriz()) {
+        boolean yaTieneMatriz = cliente.getDirecciones().stream()
+            .anyMatch(Direccion::isEsMatriz);
+
+        if (yaTieneMatriz) {
+            throw new DireccionMatrizYaExisteException("El cliente ya tiene una dirección matriz registrada");
+        }
     }
+
+    direccion.setCliente(cliente);
+    return direccionRepo.save(direccion);
+}
+    
 
     public List<Direccion> listarDirecciones(Long clienteId) {
         return direccionRepo.findByClienteId(clienteId);

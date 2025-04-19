@@ -14,7 +14,7 @@ Sistema de gestión de clientes y direcciones para facturación.
 3. Ejecuta con `mvn spring-boot:run`
 4. Prueba la API con Postman en:
    - `POST /api/clientes/crear`
-   - `GET /api/clientes/buscar?valor=Marcelo`
+   - `GET /api/clientes/buscar?valor=Brayan`
    - `PUT /api/clientes/{id}`
    - `DELETE /api/clientes/{id}`
    - `POST /api/clientes/{id}/direccion`
